@@ -11,16 +11,16 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$ROOT/.build/release/Toastune" "$APP/Contents/MacOS/Toastune"
 cp "$ROOT/Info.plist" "$APP/Contents/Info.plist"
 cp "$RES/spotify.js" "$APP/Contents/Resources/spotify.js"
-cp "$RES/music.js" "$APP/Contents/Resources/music.js"
 cp -R "$RES/en.lproj" "$RES/zh-Hans.lproj" "$APP/Contents/Resources/"
-# The Icon Composer icon needs Xcode's actool; without it, fall back to the prebuilt .icns.
+# Compile the modern Icon Composer asset catalog and retain the full-resolution legacy .icns.
 if xcrun --find actool >/dev/null 2>&1; then
     xcrun actool "$RES/AppIcon.icon" --compile "$APP/Contents/Resources" --platform macosx \
         --minimum-deployment-target 14.0 --app-icon AppIcon \
         --output-partial-info-plist "$ROOT/.build/icon-partial.plist" >/dev/null
-else
-    cp "$RES/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 fi
+# UserNotifications and older LaunchServices paths can resolve CFBundleIconFile from this file.
+# actool emits a reduced compatibility icon; replace it with the complete iconset-derived version.
+cp "$RES/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 # Signs ad hoc by default. Set SIGN_IDENTITY (e.g. an "Apple Development" identity) so that
 # notification and automation permissions survive rebuilds. The hardened runtime blocks Apple
 # Events unless the entitlement allows them, which the player scripts depend on.

@@ -2,82 +2,73 @@ import AppKit
 import Foundation
 import OSAKit
 
-/// Reads the current song from Spotify and Music.
-/// Both players broadcast a distributed notification whenever playback changes; each broadcast
-/// triggers one immediate read of that player. A slow poll only backs up missed broadcasts,
-/// so an idle Mac runs a script every few seconds at most, and compiled scripts are reused.
+/// Reads Spotify snapshots from playback-change broadcasts, with a slow backup poll.
+/// Scripts are compiled once and reused.
+///
+/// Broadcast bursts are coalesced; an idle Mac only runs a script every few seconds at most.
 @MainActor
 final class MediaStream {
     var onFailure: ((String) -> Void)?
     var onRecovery: (() -> Void)?
     var onSnapshot: (([String: Any]) -> Void)?
-
     private static let fallbackInterval: Duration = .seconds(15)
-    /// Broadcasts arrive in bursts when skipping; reading once per burst is enough.
     private static let burstDelay: Duration = .milliseconds(120)
-    private static let broadcasts = ["com.spotify.client.PlaybackStateChanged": "com.spotify.client",
-                                     "com.apple.Music.playerInfo": "com.apple.Music"]
 
-    private var scripts: [String: PlayerScript] = [:]
-    private var reportedFailures: Set<String> = []
+    private static let broadcast = "com.spotify.client.PlaybackStateChanged"
+
+    private var script: PlayerScript?
+    private var hasReportedFailure = false
     private var observers: [NSObjectProtocol] = []
-    private var pending: [String: Task<Void, Never>] = [:]
+    private var pending: Task<Void, Never>?
     private var loop: Task<Void, Never>?
 
     func start() {
         stop()
         let resources = Bundle.main.resourceURL ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        for (bundleID, file) in [("com.spotify.client", "spotify.js"), ("com.apple.Music", "music.js")] {
-            guard let source = try? String(contentsOf: resources.appendingPathComponent(file), encoding: .utf8),
-                  let script = PlayerScript(source: source, language: "JavaScript") else {
-                onFailure?(String(localized: "Player scripts are missing. Run scripts/build.sh."))
-                return
-            }
-            scripts[bundleID] = script
+        guard let source = try? String(contentsOf: resources.appendingPathComponent("spotify.js"), encoding: .utf8),
+              let playerScript = PlayerScript(source: source, language: "JavaScript") else {
+            onFailure?(String(localized: "Player scripts are missing. Run scripts/build.sh."))
+            return
         }
+        script = playerScript
 
         let center = DistributedNotificationCenter.default()
-        for (name, bundleID) in Self.broadcasts {
-            observers.append(center.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.scheduleRead(bundleID) }
-            })
-        }
+        observers.append(center.addObserver(forName: Notification.Name(Self.broadcast), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.scheduleRead() }
+        })
         loop = Task { [weak self] in
             while !Task.isCancelled {
-                for bundleID in ["com.spotify.client", "com.apple.Music"] { await self?.read(bundleID) }
+                await self?.read()
                 try? await Task.sleep(for: Self.fallbackInterval)
             }
         }
     }
-
     func stop() {
         loop?.cancel(); loop = nil
-        pending.values.forEach { $0.cancel() }; pending = [:]
+        pending?.cancel(); pending = nil
         observers.forEach { DistributedNotificationCenter.default().removeObserver($0) }
         observers = []
     }
 
-    private func scheduleRead(_ bundleID: String) {
-        pending[bundleID]?.cancel()
-        pending[bundleID] = Task { [weak self] in
+    private func scheduleRead() {
+        pending?.cancel()
+        pending = Task { [weak self] in
             do { try await Task.sleep(for: Self.burstDelay) } catch { return }
-            await self?.read(bundleID)
+            await self?.read()
         }
     }
 
-    private func read(_ bundleID: String) async {
-        guard let script = scripts[bundleID],
-              !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty else { return }
+    private func read() async {
+        guard let script,
+              !NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").isEmpty else { return }
         switch await script.run() {
-        case .success(var payload):
-            let hadFailures = !reportedFailures.isEmpty
-            reportedFailures.remove(bundleID)
-            if hadFailures && reportedFailures.isEmpty { onRecovery?() }
-            payload["bundleIdentifier"] = bundleID
+        case .success(let payload):
+            if hasReportedFailure { onRecovery?() }
+            hasReportedFailure = false
             onSnapshot?(payload)
         case .failure(let error):
-            guard !reportedFailures.contains(bundleID) else { return }
-            reportedFailures.insert(bundleID)
+            guard !hasReportedFailure else { return }
+            hasReportedFailure = true
             onFailure?(error.localizedDescription)
         }
     }
@@ -101,7 +92,7 @@ final class PlayerScript: @unchecked Sendable {
         case .success(let text):
             guard let data = text.data(using: .utf8),
                   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                return .failure(ScriptError.failed(String(localized: "The player didn't respond to Toastune.")))
+                return .failure(ScriptError.failed(String(localized: "Spotify didn't respond to Toastune.")))
             }
             return .success(object)
         case .failure(let error):
@@ -118,8 +109,8 @@ final class PlayerScript: @unchecked Sendable {
                 } else {
                     let code = error?[OSAScriptErrorNumberKey] as? Int ?? 0
                     let message = code == -1743
-                        ? String(localized: "Toastune isn't allowed to read the player. Allow it in System Settings › Privacy & Security › Automation.")
-                        : String(localized: "The player didn't respond to Toastune.")
+                        ? String(localized: "Toastune isn't allowed to read Spotify. Allow it in System Settings › Privacy & Security › Automation.")
+                        : String(localized: "Spotify didn't respond to Toastune.")
                     continuation.resume(returning: .failure(ScriptError.failed(message)))
                 }
             }

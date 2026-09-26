@@ -18,20 +18,19 @@ final class SystemNotifier: NSObject {
         center.delegate = self
     }
 
-    /// Returns false when notifications are unavailable so the caller can fall back to the panel.
-    func show(_ track: Track, showsSource: Bool, artwork: NSImage?) async -> Bool {
-        guard await isAuthorized() else { return false }
+    /// Requests notification permission when needed; denied or unavailable notifications are not presented.
+    func show(_ track: Track, artwork: NSImage?) async {
+        guard await isAuthorized() else { return }
 
         let content = UNMutableNotificationContent()
         content.title = track.title
         content.body = [track.artist, track.album].filter { !$0.isEmpty }.joined(separator: " — ")
-        content.threadIdentifier = track.source
+        content.threadIdentifier = "spotify"
         content.interruptionLevel = .active
-        content.userInfo = ["source": track.source]
         // Artwork is the song's own face; the player's icon is only an opt-in fallback.
         if let artwork, let attachment = Self.imageAttachment(artwork) {
             content.attachments = [attachment]
-        } else if showsSource, let attachment = Self.iconAttachment(for: track.source) {
+        } else if let attachment = Self.iconAttachment(for: "com.spotify.client") {
             content.attachments = [attachment]
         }
 
@@ -43,14 +42,13 @@ final class SystemNotifier: NSObject {
             try await center.add(UNNotificationRequest(identifier: Self.identifier, content: content, trigger: nil))
         } catch {
             NSLog("Toastune: %@", error.localizedDescription)
-            return false
+            return
         }
         withdrawTask = Task { [weak self] in
             do { try await Task.sleep(for: .seconds(Self.withdrawDelay)) } catch { return }
             guard let self, self.generation == token else { return }
             self.center.removeDeliveredNotifications(withIdentifiers: [Self.identifier])
         }
-        return true
     }
 
     func hide() {
@@ -107,10 +105,9 @@ extension SystemNotifier: UNUserNotificationCenterDelegate {
 
     /// Clicking the banner brings the player forward; it never changes playback.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
-              let source = response.notification.request.content.userInfo["source"] as? String else { return }
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         await MainActor.run {
-            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: source) else { return }
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.spotify.client") else { return }
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
         }
     }

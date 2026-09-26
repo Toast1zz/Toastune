@@ -1,19 +1,15 @@
 import Foundation
 
+/// A Spotify track with a stable Spotify URI identity.
 struct Track: Equatable {
-    let source: String
     let title: String
     let artist: String
     var album: String = ""
     let identity: String
 
-    /// The player's own identifier: a Spotify URI or a Music persistent ID.
-    var itemID: String { String(identity.dropFirst(source.count + 1)) }
-
-    /// Parses an eligible music snapshot, regardless of whether it is a change.
+    /// Parses an eligible Spotify snapshot.
     static func from(_ payload: [String: Any]) -> Track? {
-        guard let source = payload["bundleIdentifier"] as? String,
-              source == "com.spotify.client" || source == "com.apple.Music",
+        guard payload["bundleIdentifier"] as? String == "com.spotify.client",
               payload["eligible"] as? Bool == true,
               let title = payload["title"] as? String,
               !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -21,26 +17,26 @@ struct Track: Equatable {
               !itemID.isEmpty else {
             return nil
         }
-        return Track(source: source, title: title, artist: payload["artist"] as? String ?? "",
-                     album: payload["album"] as? String ?? "", identity: source + "|" + itemID)
+        return Track(title: title, artist: payload["artist"] as? String ?? "",
+                     album: payload["album"] as? String ?? "", identity: itemID)
     }
 
     static func == (lhs: Track, rhs: Track) -> Bool {
-        lhs.source == rhs.source && lhs.identity == rhs.identity
+        lhs.identity == rhs.identity
     }
 }
 
-/// Consumes snapshots from the player scripts. Ineligible media never changes music state.
+/// Consumes Spotify snapshots. Ineligible media never changes track state.
 struct TrackChanges {
-    private var lastIdentityBySource: [String: String] = [:]
-    private var observedSources: Set<String> = []
+    private var lastIdentity: String?
+    private var hasObservedTrack = false
 
     mutating func accept(_ payload: [String: Any]) -> Track? {
         guard let track = Track.from(payload) else { return nil }
-        let source = track.source, identity = track.identity
-        if !observedSources.contains(source) {
-            observedSources.insert(source)
-            lastIdentityBySource[source] = identity
+        let identity = track.identity
+        if !hasObservedTrack {
+            hasObservedTrack = true
+            lastIdentity = identity
             return nil
         }
 
@@ -48,10 +44,10 @@ struct TrackChanges {
         // a previously playing identity: if the user changes while paused, the
         // next playing snapshot is the first observable change.
         guard payload["playing"] as? Bool == true,
-              identity != lastIdentityBySource[source] else {
+              identity != lastIdentity else {
             return nil
         }
-        lastIdentityBySource[source] = identity
+        lastIdentity = identity
         return track
     }
 }

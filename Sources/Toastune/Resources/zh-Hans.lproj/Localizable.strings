@@ -1,26 +1,11 @@
 /* Menu */
 "Show Song Alerts" = "显示切歌提示";
-"Display Time" = "显示时间";
-"%lld seconds" = "%lld 秒";
-"System notifications stay on screen as set in System Settings › Notifications." = "系统通知的停留时间由系统设置 > 通知决定";
-"Alert Style" = "提示样式";
-"System Notification" = "系统通知";
-"Drawn by macOS; follows Focus and notification settings" = "由系统绘制，跟随专注模式与通知设置";
-"Floating Panel" = "浮动面板";
-"Larger artwork, updates in place, no permission needed" = "封面更大，连续切歌原位更新，无需通知权限";
-"Show Player Icon" = "显示播放器图标";
 "Quiet While Player Is in Front" = "播放器在前台时不提示";
 "Preview Alert" = "预览提示";
-"Works with Spotify and Apple Music" = "支持 Spotify 与 Apple Music";
 "Quit Toastune" = "退出 Toastune";
-"Music Also Announces Songs" = "音乐 App 也在发切歌通知";
-"Each song is announced twice. Turn off “When song changes” in Music › Settings › General." = "每首歌会提示两次。请在音乐 > 设置 > 通用中关闭“歌曲更改时”";
 
 /* Status */
-"Can't read players" = "媒体监听不可用";
-"Player scripts are missing. Run scripts/build.sh." = "缺少播放器读取脚本。请运行 scripts/build.sh。";
-"The player didn't respond to Toastune." = "播放器自动化请求失败。";
-"Toastune isn't allowed to read the player. Allow it in System Settings › Privacy & Security › Automation." = "系统未授权 Toastune 读取播放器。请在系统设置 > 隐私与安全性 > 自动化中允许访问。";
-
-/* Panel */
-"Close" = "关闭";
+"Can't read Spotify" = "无法读取 Spotify";
+"Player scripts are missing. Run scripts/build.sh." = "缺少 Spotify 读取脚本。请运行 scripts/build.sh。";
+"Spotify didn't respond to Toastune." = "Spotify 自动化请求失败。";
+"Toastune isn't allowed to read Spotify. Allow it in System Settings › Privacy & Security › Automation." = "系统未授权 Toastune 读取 Spotify。请在系统设置 > 隐私与安全性 > 自动化中允许访问。";
