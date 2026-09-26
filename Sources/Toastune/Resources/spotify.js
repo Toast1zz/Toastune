@@ -10,6 +10,7 @@ function run() {
         return JSON.stringify({eligible: false, playing: state === "playing"});
     }
     return JSON.stringify({
+        bundleIdentifier: "com.spotify.client",
         eligible: true,
         playing: state === "playing",
         id: id,

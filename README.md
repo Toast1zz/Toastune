@@ -58,7 +58,7 @@ Song information stays on the Mac. The only network requests are artwork downloa
 
 ## Release
 
-Toastune v0.2.0 uses bundle identifier `app.toastune.spotify` (the previous release used `app.toastune.mac`). This identity change is intentional so macOS can discard stale notification icon state.
+Toastune v0.2.1 uses bundle identifier `app.toastune.spotify` (the previous release used `app.toastune.mac`). This identity change is intentional so macOS can discard stale notification icon state.
 
 ### Upgrade from an earlier release
 
