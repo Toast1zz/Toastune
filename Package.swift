@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.executable(name: "Toastune", targets: ["Toastune"])],
     targets: [
-        .executableTarget(name: "Toastune", exclude: ["Resources"], linkerSettings: [.linkedFramework("OSAKit")]),
+        .executableTarget(name: "Toastune", exclude: ["Resources"], linkerSettings: [.linkedFramework("OSAKit"), .linkedFramework("ServiceManagement")]),
         .testTarget(name: "ToastuneTests", dependencies: ["Toastune"])
     ]
 )

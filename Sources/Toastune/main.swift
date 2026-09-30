@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 enum PreferenceMigration {
     private static let migratedKey = "toastunePreferencesMigratedFromLegacy"
@@ -99,6 +100,24 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         quiet.target = self
         quiet.state = quietWhenPlayerFrontmost ? .on : .off
         menu.addItem(quiet)
+        let loginStatus = SMAppService.mainApp.status
+        let loginTitle = loginStatus == .requiresApproval
+            ? String(localized: "Open at Login (Approval Needed)")
+            : String(localized: "Open at Login")
+        let login = NSMenuItem(title: loginTitle, action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        login.target = self
+        switch loginStatus {
+        case .enabled:
+            login.state = .on
+        case .requiresApproval:
+            login.state = .mixed
+            login.toolTip = String(localized: "Approve Toastune in System Settings › General › Login Items.")
+        case .notRegistered, .notFound:
+            login.state = .off
+        @unknown default:
+            login.state = .off
+        }
+        menu.addItem(login)
         let preview = NSMenuItem(title: String(localized: "Preview Alert"), action: #selector(previewAlert), keyEquivalent: "")
         preview.target = self
         menu.addItem(preview)
@@ -117,6 +136,51 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleQuiet() {
         UserDefaults.standard.set(!quietWhenPlayerFrontmost, forKey: quietKey)
         refreshMenu()
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        do {
+            switch service.status {
+            case .enabled, .requiresApproval:
+                try service.unregister()
+            case .notRegistered, .notFound:
+                try service.register()
+            @unknown default:
+                return
+            }
+            refreshMenu()
+            if service.status == .requiresApproval {
+                showApprovalRequiredMessage()
+            }
+        } catch {
+            refreshMenu()
+            showLaunchAtLoginMessage(
+                title: String(localized: "Couldn't Change Login Item"),
+                message: String(localized: "Login item operation failed: \(error.localizedDescription)")
+            )
+        }
+    }
+
+    private func showApprovalRequiredMessage() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Approval Required")
+        alert.informativeText = String(localized: "Toastune is registered to open at login, but macOS requires approval. Approve it in System Settings › General › Login Items.")
+        alert.addButton(withTitle: String(localized: "Open Login Items"))
+        alert.addButton(withTitle: String(localized: "OK"))
+        if alert.runModal() == .alertFirstButtonReturn {
+            SMAppService.openSystemSettingsLoginItems()
+        }
+    }
+
+    private func showLaunchAtLoginMessage(title: String, message: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
     }
 
     @objc private func previewAlert() {

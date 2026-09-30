@@ -1,0 +1,20 @@
+/* Menu */
+"Show Song Alerts" = "Show Song Alerts";
+"Quiet While Player Is in Front" = "Quiet While Player Is in Front";
+"Preview Alert" = "Preview Alert";
+"Quit Toastune" = "Quit Toastune";
+"Open at Login" = "Open at Login";
+"Open at Login (Approval Needed)" = "Open at Login (Approval Needed)";
+"Approve Toastune in System Settings › General › Login Items." = "Approve Toastune in System Settings › General › Login Items.";
+"Approval Required" = "Approval Required";
+"Toastune is registered to open at login, but macOS requires approval. Approve it in System Settings › General › Login Items." = "Toastune is registered to open at login, but macOS requires approval. Approve it in System Settings › General › Login Items.";
+"Open Login Items" = "Open Login Items";
+"Couldn't Change Login Item" = "Couldn't Change Login Item";
+"Login item operation failed: %@" = "Login item operation failed: %@";
+"OK" = "OK";
+
+/* Status */
+"Can't read Spotify" = "Can't read Spotify";
+"Player scripts are missing. Run scripts/build.sh." = "Player scripts are missing. Run scripts/build.sh.";
+"Spotify didn't respond to Toastune." = "Spotify didn't respond to Toastune.";
+"Toastune isn't allowed to read Spotify. Allow it in System Settings › Privacy & Security › Automation." = "Toastune isn't allowed to read Spotify. Allow it in System Settings › Privacy & Security › Automation.";

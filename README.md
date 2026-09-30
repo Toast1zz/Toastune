@@ -28,6 +28,7 @@ The README image and the app bundle use Toastune's colorful app artwork. The men
 
 Toastune has no window. Click the music icon in the menu bar.
 
+- **Open at Login** (开机自启): uses macOS's native login item. If macOS requires approval, Toastune marks the setting as needing approval and directs you to System Settings › General › Login Items. Turning this off unregisters Toastune; quitting the app does not change this setting.
 - **Show Song Alerts**: turns alerts on or off.
 - **Quiet While Player Is in Front**: no alert while Spotify is the frontmost app. Off by default.
 - **Preview Alert**: requests notification permission if needed, then shows the current Spotify song or a sample alert when Spotify is not playing.
@@ -58,13 +59,17 @@ Song information stays on the Mac. The only network requests are artwork downloa
 
 ## Release
 
-Toastune v0.2.1 uses bundle identifier `app.toastune.spotify` (the previous release used `app.toastune.mac`). This identity change is intentional so macOS can discard stale notification icon state.
+Toastune v0.2.2 continues using bundle identifier `app.toastune.spotify`, introduced in v0.2.1 (the previous release, v0.2.0, used `app.toastune.mac`). That identity change was made so macOS can discard stale notification icon state.
+
+### What's new in v0.2.2
+
+- **Open at Login**: use the menu bar setting to register or unregister Toastune as a native macOS login item. macOS may require approval in System Settings › General › Login Items.
 
 ### Upgrade from an earlier release
 
-On its first launch, the new identity copies only `showSongAlerts` and `quietWhenPlayerFrontmost` from the new identity if already present, otherwise from `app.toastune.mac`, then `app.toastune.Toastune`. Existing values in the new identity always win, and migration runs once; unrelated preferences are not copied.
+When the bundle identity changed in v0.2.1, Toastune copied only `showSongAlerts` and `quietWhenPlayerFrontmost` from the new identity if already present, otherwise from `app.toastune.mac`, then `app.toastune.Toastune`. Existing values in the new identity always win, and migration runs once; unrelated preferences are not copied.
 
-Because macOS permissions belong to the bundle identity, approve **Automation → Spotify** and **Notifications** again after upgrading. The new app must be the copy you launch: quit the old Toastune first, replace `/Applications/Toastune.app` with the refreshed bundle, then open it. Do not keep two Toastune copies running, since macOS may register the old identity separately.
+Because macOS permissions belong to the bundle identity, users upgrading across the v0.2.1 identity change should approve **Automation → Spotify** and **Notifications** again. The new app must be the copy you launch: quit the old Toastune first, replace `/Applications/Toastune.app` with the refreshed bundle, then open it. Do not keep two Toastune copies running, since macOS may register the old identity separately.
 
 ## Install
 

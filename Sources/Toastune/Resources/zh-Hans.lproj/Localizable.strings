@@ -3,6 +3,15 @@
 "Quiet While Player Is in Front" = "播放器在前台时不提示";
 "Preview Alert" = "预览提示";
 "Quit Toastune" = "退出 Toastune";
+"Open at Login" = "开机自启";
+"Open at Login (Approval Needed)" = "开机自启（需要批准）";
+"Approve Toastune in System Settings › General › Login Items." = "请在系统设置 › 通用 › 登录项中批准 Toastune。";
+"Approval Required" = "需要批准";
+"Toastune is registered to open at login, but macOS requires approval. Approve it in System Settings › General › Login Items." = "Toastune 已登记为开机自启，但 macOS 需要批准。请在系统设置 › 通用 › 登录项中批准。";
+"Open Login Items" = "打开登录项设置";
+"Couldn't Change Login Item" = "无法更改登录项";
+"Login item operation failed: %@" = "登录项操作失败：%@";
+"OK" = "好";
 
 /* Status */
 "Can't read Spotify" = "无法读取 Spotify";
